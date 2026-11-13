@@ -149,7 +149,7 @@ services:
   # The images' variants, public and long cached; reached through the tunnel (staging) or the reverse proxy
   # (production) as /media/* on the web's hostname
   spexipedia-media:
-    image: ${NGINX_IMAGE:-nginx:1.29-alpine}
+    image: ${NGINX_IMAGE:-nginx:1.30-alpine}
     environment:
       MEDIA_CACHE_DAYS: ${MEDIA_CACHE_DAYS:-365}
     restart: unless-stopped
