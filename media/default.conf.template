@@ -1,0 +1,32 @@
+# spexipedia-media: serves the variants of Spexipedia's own images, which are public, under /media/ on Spexipedia's
+# hostname: /media/images/<imageId>/<thumbnail|page|full>.<webp|jpg>. The API writes them to the shared folder
+# (mounted read-only here at /srv/media). Originals, which may carry metadata, and the trash are never served.
+# Addresses never change for a file (an image is replaced by a new id), so they are cached for MEDIA_CACHE_DAYS.
+
+server {
+    listen 80;
+    server_tokens off;
+    autoindex off;
+    root /srv;
+
+    location = /healthz {
+        access_log off;
+        return 200 "ok\n";
+    }
+
+    location ~ "^/media/images/[0-9a-f-]{36}/(?:thumbnail|page|full)\.(?:webp|jpg)$" {
+        limit_except GET HEAD {
+            deny all;
+        }
+        expires ${MEDIA_CACHE_DAYS}d;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header Content-Security-Policy "default-src 'none'; sandbox" always;
+        try_files $uri =404;
+    }
+
+    location / {
+        return 404;
+    }
+}

@@ -1,0 +1,193 @@
+name: fgv-spexipedia-${DEPLOY_ENV:?DEPLOY_ENV must be set in .env}
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "5"
+
+# Keeps the processes from gaining privileges through setuid binaries
+x-security-opt: &security-opt
+  - no-new-privileges:true
+
+services:
+  spexipedia-mysql:
+    image: ${MYSQL_IMAGE:-mysql:8.4}
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/MYSQL_ROOT_PASSWORD
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD_FILE: /run/secrets/MYSQL_USER_PASSWORD
+    restart: unless-stopped
+    logging: *logging
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - default
+    secrets:
+      - MYSQL_ROOT_PASSWORD
+      - MYSQL_USER_PASSWORD
+
+  # GraphQL and image uploads. On the shared network for Keycloak, the web, the applications that read base data and
+  # the change feed, and the applications Spexipedia asks for people, photos and links
+  spexipedia-api:
+    image: ${API_IMAGE:?API_IMAGE must be set in .env}
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://spexipedia-mysql/${MYSQL_DATABASE}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-server:8080/auth/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: https://${KEYCLOAK_HOST}/auth/realms/${KEYCLOAK_REALM}
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FGV_TOKEN_URI: http://keycloak-server:8080/auth/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token
+      SPRING_PROFILES_ACTIVE: ${DEPLOY_ENV}
+      SERVER_FORWARD_HEADERS_STRATEGY: native
+      LOGGING_FILE_PATH: /data/log_data
+      API_WEB_URL: https://${WEB_HOST}
+      API_KEYCLOAK_URL: http://keycloak-server:8080/auth
+      API_KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      API_KEYCLOAK_ADMIN_CLIENT_ID: fgv-admin
+      API_KEYCLOAK_SERVICE_CLIENT_ID: fgv-spexipedia-service
+      # The images' variants, served by spexipedia-media under /media/ on the web's hostname
+      API_MEDIA_ROOT: /data/media
+      API_MEDIA_BASE_URL: https://${WEB_HOST}/media
+      API_UPLOADS_ROOT: /data/uploads
+      API_SPEXREGISTER_GRAPHQL_URL: ${SPEXREGISTER_GRAPHQL_URL:-http://spexregister-api:8080/api/graphql}
+      API_SPEXGRAM_GRAPHQL_URL: ${SPEXGRAM_GRAPHQL_URL:-http://spexgram-api:8080/api/graphql}
+      API_SPEXIFY_GRAPHQL_URL: ${SPEXIFY_GRAPHQL_URL:-http://spexify-api:8080/api/graphql}
+      API_SPEXFLIX_GRAPHQL_URL: ${SPEXFLIX_GRAPHQL_URL:-http://spexflix-api:8080/api/graphql}
+      API_ARCHIVE_GRAPHQL_URL: ${ARCHIVE_GRAPHQL_URL:-http://archive-api:8080/api/graphql}
+      # Where the links to the other applications point, for the viewer
+      SPEXREGISTER_URL: ${SPEXREGISTER_WEB_URL:-}
+      SPEXGRAM_URL: ${SPEXGRAM_WEB_URL:-}
+      SPEXIFY_URL: ${SPEXIFY_WEB_URL:-}
+      SPEXFLIX_URL: ${SPEXFLIX_WEB_URL:-}
+      ARCHIVE_URL: ${ARCHIVE_WEB_URL:-}
+      API_IMPORT_SAMPLE_DATA: ${API_IMPORT_SAMPLE_DATA:-false}
+      API_SAMPLE_DATA_SIZE: ${API_SAMPLE_DATA_SIZE:-small}
+    restart: unless-stopped
+    logging: *logging
+    security_opt: *security-opt
+    healthcheck:
+      test: [ "CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000;printf \"GET /actuator/health HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n\" >&3;grep -q \"^HTTP/1.1 200\" <&3" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+    depends_on:
+      spexipedia-mysql:
+        condition: service_healthy
+    volumes:
+      - ./data/api/log_data:/data/log_data
+      - ./data/media:/data/media
+      - ./data/uploads:/data/uploads
+    networks:
+      - default
+      - fgv
+    secrets:
+      - source: MYSQL_USER_PASSWORD
+        target: MYSQL_API_USER_PASSWORD
+      - source: KEYCLOAK_ADMIN_CLIENT_SECRET
+        target: API_KEYCLOAK_ADMIN_CLIENT_SECRET
+      - source: KEYCLOAK_SERVICE_CLIENT_SECRET
+        target: API_KEYCLOAK_SERVICE_CLIENT_SECRET
+      - SAMPLE_USER_PASSWORD
+
+  spexipedia-web:
+    image: ${WEB_IMAGE:?WEB_IMAGE must be set in .env}
+    command:
+      - sh
+      - -c
+      - |
+        export AUTH_SECRET=$$(cat /run/secrets/WEB_AUTH_SECRET)
+        export KEYCLOAK_CLIENT_SECRET=$$(cat /run/secrets/KEYCLOAK_CLIENT_SECRET)
+        exec node server.js
+    environment:
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      BETTER_AUTH_URL: https://${WEB_HOST}
+      KEYCLOAK_CLIENT_ID: fgv-spexipedia
+      KEYCLOAK_ISSUER: https://${KEYCLOAK_HOST}/auth/realms/${KEYCLOAK_REALM}
+      API_GRAPHQL_ENDPOINT: http://spexipedia-api:8080/api/graphql
+      API_ENDPOINT: http://spexipedia-api:8080
+      MEDIA_ORIGIN: https://${WEB_HOST}
+      SPEXREGISTER_WEB_URL: ${SPEXREGISTER_WEB_URL:-}
+      FGV_REVIVAL_WEB_URL: ${FGV_REVIVAL_WEB_URL:-}
+      SPEXIFY_WEB_URL: ${SPEXIFY_WEB_URL:-}
+      SPEXFLIX_WEB_URL: ${SPEXFLIX_WEB_URL:-}
+      SPEXGRAM_WEB_URL: ${SPEXGRAM_WEB_URL:-}
+      ARCHIVE_WEB_URL: ${ARCHIVE_WEB_URL:-}
+      SUPPORTED_LOCALES: ${SUPPORTED_LOCALES:-sv,en}
+      DEFAULT_LOCALE: ${DEFAULT_LOCALE:-sv}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL}
+      FEEDBACK_EMAIL: ${FEEDBACK_EMAIL}
+      UMAMI_URL: http://umami-server:3000
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
+    restart: unless-stopped
+    logging: *logging
+    security_opt: *security-opt
+    healthcheck:
+      test: [ "CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:3000/api/auth/ok" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    depends_on:
+      spexipedia-api:
+        condition: service_healthy
+    networks:
+      - default
+      - fgv
+    secrets:
+      - WEB_AUTH_SECRET
+      - KEYCLOAK_CLIENT_SECRET
+
+  # The images' variants, public and long cached; reached through the tunnel (staging) or the reverse proxy
+  # (production) as /media/* on the web's hostname
+  spexipedia-media:
+    image: ${NGINX_IMAGE:-nginx:1.29-alpine}
+    environment:
+      MEDIA_CACHE_DAYS: ${MEDIA_CACHE_DAYS:-365}
+    restart: unless-stopped
+    logging: *logging
+    security_opt: *security-opt
+    healthcheck:
+      test: [ "CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1/healthz" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - ./media/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./data/media:/srv/media:ro
+    networks:
+      - fgv
+
+volumes:
+  mysql_data:
+
+networks:
+  default:
+  fgv:
+    name: fgv-${DEPLOY_ENV}
+    external: true
+
+secrets:
+  MYSQL_ROOT_PASSWORD:
+    file: ./secrets/MYSQL_ROOT_PASSWORD
+  MYSQL_USER_PASSWORD:
+    file: ./secrets/MYSQL_USER_PASSWORD
+  KEYCLOAK_SERVICE_CLIENT_SECRET:
+    file: ./secrets/KEYCLOAK_SERVICE_CLIENT_SECRET
+  KEYCLOAK_ADMIN_CLIENT_SECRET:
+    file: ./secrets/KEYCLOAK_ADMIN_CLIENT_SECRET
+  KEYCLOAK_CLIENT_SECRET:
+    file: ./secrets/KEYCLOAK_CLIENT_SECRET
+  SAMPLE_USER_PASSWORD:
+    file: ./secrets/SAMPLE_USER_PASSWORD
+  WEB_AUTH_SECRET:
+    file: ./secrets/WEB_AUTH_SECRET
