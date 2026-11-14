@@ -20,6 +20,7 @@ services:
       MYSQL_PASSWORD_FILE: /run/secrets/MYSQL_USER_PASSWORD
     restart: unless-stopped
     logging: *logging
+    security_opt: *security-opt
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent" ]
       interval: 10s
@@ -45,7 +46,6 @@ services:
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: https://${KEYCLOAK_HOST}/auth/realms/${KEYCLOAK_REALM}
       SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FGV_TOKEN_URI: http://keycloak-server:8080/auth/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token
       SPRING_PROFILES_ACTIVE: ${DEPLOY_ENV}
-      SERVER_FORWARD_HEADERS_STRATEGY: native
       LOGGING_FILE_PATH: /data/log_data
       API_WEB_URL: https://${WEB_HOST}
       API_KEYCLOAK_URL: http://keycloak-server:8080/auth
@@ -115,6 +115,8 @@ services:
       API_GRAPHQL_ENDPOINT: http://spexipedia-api:8080/api/graphql
       API_ENDPOINT: http://spexipedia-api:8080
       MEDIA_ORIGIN: https://${WEB_HOST}
+      # Spexgram's media server, for the photos and videos of people on spex pages (the pages' Content Security Policy)
+      SPEXGRAM_MEDIA_ORIGIN: ${SPEXGRAM_MEDIA_ORIGIN:-}
       SPEXREGISTER_WEB_URL: ${SPEXREGISTER_WEB_URL:-}
       FGV_REVIVAL_WEB_URL: ${FGV_REVIVAL_WEB_URL:-}
       SPEXIFY_WEB_URL: ${SPEXIFY_WEB_URL:-}

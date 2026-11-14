@@ -45,6 +45,7 @@ the sample users their roles) and `SAMPLE_USER_PASSWORD` from `../spexregister-d
 | `API_IMAGE`, `WEB_IMAGE` | The images to run |
 | `*_GRAPHQL_URL` | The other applications' APIs on the shared network, which Spexipedia asks for people (Spexregister), photos (Spexgram) and links (Spexify, Spexflix, Spexarkivet). Each may be missing; its parts of the pages are then left out |
 | `*_WEB_URL` | The other applications' addresses, for the application switcher and links |
+| `SPEXGRAM_MEDIA_ORIGIN` | `https://` and Spexgram's `MEDIA_HOST`: the pages' Content Security Policy allows its photos and videos; without it, Spexgram's videos do not play |
 | `API_IMPORT_SAMPLE_DATA` | `true` replaces everything with sample data at every start (refused in `production`) |
 | `UMAMI_WEBSITE_ID` | The website's id in Umami (see `fgv-infra-deploy`, *Umami*); empty sends nothing |
 
