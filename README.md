@@ -63,7 +63,7 @@ are `fgv-infra-deploy`'s (`bin/seed-users.sh`), so the sample data needs no Keyc
 
 **Change recipients.** After a change to base data Spexipedia tells the applications that copy it, as
 `fgv-spexipedia-service`. The sample data adds them all; in production add them under *Administration → Mottagare av
-ändringar* with their service account and notify address, e.g. `spexregister-service` and
+ändringar* with their service account and notify address, e.g. `fgv-spexregister-service` and
 `http://spexregister-api:8080/api/sync/notify`. Each also pulls the feed itself every five minutes.
 
 ## Staging
