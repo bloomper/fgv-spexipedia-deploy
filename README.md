@@ -34,7 +34,8 @@ sudo chown -R 1000:1000 data
 ```
 
 `bin/init-secrets.sh` copies `fgv-spexipedia` and `fgv-spexipedia-service` from
-`../fgv-infra-deploy/secrets/clients/` (set `INFRA_DEPLOY` for other layouts). You can run it again safely.
+`fgv-infra-deploy/secrets/clients/`, next to this checkout or one level further up (set `INFRA_DEPLOY` for other
+layouts). You can run it again safely.
 
 | Variable | Meaning |
 |----------|---------|
