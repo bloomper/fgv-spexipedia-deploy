@@ -1,0 +1,17 @@
+# The Cloudflare Tunnel connector, used on staging only: production uses no Cloudflare and sits behind its own
+# reverse proxy.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "5"
+
+services:
+  cloudflared:
+    # Pinned like every other image; CLOUDFLARED_VERSION in .env overrides it
+    image: cloudflare/cloudflared:${CLOUDFLARED_VERSION:-2026.11.0}
+    command: tunnel --no-autoupdate run
+    env_file:
+      - ./secrets/cloudflared.env
+    restart: unless-stopped
+    logging: *logging
