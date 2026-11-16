@@ -34,9 +34,7 @@ sudo chown -R 1000:1000 data
 ```
 
 `bin/init-secrets.sh` copies `fgv-spexipedia` and `fgv-spexipedia-service` from
-`../fgv-infra-deploy/secrets/clients/`, and with `API_IMPORT_SAMPLE_DATA=true` also `fgv-admin` (the sample data gives
-the sample users their roles) and `SAMPLE_USER_PASSWORD` from `../spexregister-deploy`. Set `INFRA_DEPLOY` or
-`SPEXREGISTER_DEPLOY` for other layouts. You can run it again safely.
+`../fgv-infra-deploy/secrets/clients/` (set `INFRA_DEPLOY` for other layouts). You can run it again safely.
 
 | Variable | Meaning |
 |----------|---------|
@@ -57,9 +55,8 @@ docker compose logs -f spexipedia-api
 ```
 
 **Sample data comes first.** Spexipedia is the source of spex, categories and tasks. Start it before
-`spexregister-deploy`: Spexregister's sample import waits for Spexipedia's change feed. Spexipedia then gives
-Spexregister's sample users their roles as they appear (`admin@fgv.nu`, `editor@fgv.nu`, `user@fgv.nu`) and creates
-`author@fgv.nu`.
+`spexregister-deploy`: Spexregister's sample import waits for Spexipedia's change feed. The sample users and their roles
+are `fgv-infra-deploy`'s (`bin/seed-users.sh`), so the sample data needs no Keycloak admin client.
 
 **Change recipients.** After a change to base data Spexipedia tells the applications that copy it, as
 `fgv-spexipedia-service`. The sample data adds them all; in production add them under *Administration → Mottagare av
