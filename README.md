@@ -14,13 +14,15 @@ spexregister-api, revival-api, spexify-api, spexflix-api, archive-api, spexgram-
 ```
 
 Spexipedia is public: visitors read published pages without logging in, so there is no Cloudflare Access in front of
-it. The API is reached only from the web and the shared network; public GraphQL goes through the web.
+it. The API is reached only from the web and the shared network; public GraphQL goes through the web. The exception is
+its MCP endpoint for AI assistants, on `API_HOST`: only `/api/mcp` and `/.well-known/oauth-protected-resource/*` are
+routed there, and it accepts only tokens of Keycloak's `fgv-spexipedia-mcp`.
 
 ## 1. Before you start
 
-- `fgv-infra-deploy` is running for the same environment, with `SPEXIPEDIA_NAME` and `SPEXIPEDIA_WEB_HOST` in its
-  `.env`, and its `bin/init-secrets.sh` and `bin/configure-keycloak.sh` have run (they make the clients
-  `fgv-spexipedia` and `fgv-spexipedia-service` and their secrets).
+- `fgv-infra-deploy` is running for the same environment, with `SPEXIPEDIA_NAME`, `SPEXIPEDIA_WEB_HOST` and
+  `SPEXIPEDIA_API_HOST` in its `.env`, and its `bin/init-secrets.sh` and `bin/configure-keycloak.sh` have run (they
+  make the clients `fgv-spexipedia`, `fgv-spexipedia-mcp` and `fgv-spexipedia-service`, and the secrets).
 - Check this repository out next to `fgv-infra-deploy` and `spexregister-deploy`.
 
 ## 2. Configure
@@ -68,12 +70,14 @@ are `fgv-infra-deploy`'s (`bin/seed-users.sh`), so the sample data needs no Keyc
 
 `compose.tunnel.yaml` adds `cloudflared`. In the tunnel's public hostnames, route `WEB_HOST` with path `/media/*` to
 `http://spexipedia-media:80` first, and `WEB_HOST` to `http://spexipedia-web:3000`. Cache `/media/*` at Cloudflare;
-the addresses never change for a file.
+the addresses never change for a file. Route `API_HOST` with path `/api/mcp` and with path
+`/.well-known/oauth-protected-resource/*` to `http://spexipedia-api:8080`, uncached, and nothing else on it.
 
 ## Production
 
 Production's reverse proxy does the same: `/media/` on `WEB_HOST` to `spexipedia-media:80`, the rest to
-`spexipedia-web:3000`. Public pages may be cached briefly; pages with a session cookie never.
+`spexipedia-web:3000`. Public pages may be cached briefly; pages with a session cookie never. On `API_HOST` it routes
+only `/api/mcp` and `/.well-known/oauth-protected-resource/*` to `spexipedia-api:8080`, uncached.
 
 ## Backups
 
