@@ -31,7 +31,7 @@ routed there, and it accepts only tokens of Keycloak's `fgv-spexipedia-mcp`.
 cp staging.env.example .env        # or production.env.example
 bin/init-secrets.sh                # copies the client secrets, generates the rest
 nano secrets/cloudflared.env       # staging only: TUNNEL_TOKEN=<token>
-mkdir -p data/api/log_data data/media data/uploads
+mkdir -p data/api/log_data data/media data/uploads data/imports
 sudo chown -R 1000:1000 data
 ```
 
