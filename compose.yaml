@@ -57,6 +57,8 @@ services:
       API_MEDIA_ROOT: /data/media
       API_MEDIA_BASE_URL: https://${WEB_HOST}/media
       API_UPLOADS_ROOT: /data/uploads
+      # The import API's files and, for Spexipedia, spex packages (up to 20 GB each)
+      API_IMPORTS_ROOT: /data/imports
       API_SPEXREGISTER_GRAPHQL_URL: ${SPEXREGISTER_GRAPHQL_URL:-http://spexregister-api:8080/api/graphql}
       API_SPEXGRAM_GRAPHQL_URL: ${SPEXGRAM_GRAPHQL_URL:-http://spexgram-api:8080/api/graphql}
       API_SPEXIFY_GRAPHQL_URL: ${SPEXIFY_GRAPHQL_URL:-http://spexify-api:8080/api/graphql}
@@ -86,6 +88,7 @@ services:
       - ./data/api/log_data:/data/log_data
       - ./data/media:/data/media
       - ./data/uploads:/data/uploads
+      - ./data/imports:/data/imports
     networks:
       - default
       - fgv
