@@ -118,6 +118,10 @@ services:
       MEDIA_ORIGIN: https://${WEB_HOST}
       # Spexgram's media server, for the photos and videos of people on spex pages (the pages' Content Security Policy)
       SPEXGRAM_MEDIA_ORIGIN: ${SPEXGRAM_MEDIA_ORIGIN:-}
+      # The other applications' media, for the sections of spex pages that show their material (spec 4.2.1)
+      SPEXFLIX_MEDIA_ORIGIN: ${SPEXFLIX_MEDIA_ORIGIN:-}
+      SPEXIFY_MEDIA_ORIGIN: ${SPEXIFY_MEDIA_ORIGIN:-}
+      ARCHIVE_MEDIA_ORIGIN: ${ARCHIVE_MEDIA_ORIGIN:-}
       SPEXREGISTER_WEB_URL: ${SPEXREGISTER_WEB_URL:-}
       REVIVAL_WEB_URL: ${REVIVAL_WEB_URL:-}
       SPEXIFY_WEB_URL: ${SPEXIFY_WEB_URL:-}
