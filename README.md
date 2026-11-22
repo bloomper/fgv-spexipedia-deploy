@@ -47,6 +47,7 @@ layouts). You can run it again safely.
 | `*_GRAPHQL_URL` | The other applications' APIs on the shared network, which Spexipedia asks for people (Spexregister), photos (Spexgram) and links (Spexify, Spexflix, Spexarkivet). Each may be missing; its parts of the pages are then left out |
 | `*_WEB_URL` | The other applications' addresses, for the application switcher and links |
 | `SPEXGRAM_MEDIA_ORIGIN` | `https://` and Spexgram's `MEDIA_HOST`: the pages' Content Security Policy allows its photos and videos; without it, Spexgram's videos do not play |
+| `SPEXFLIX_MEDIA_ORIGIN`, `SPEXIFY_MEDIA_ORIGIN`, `ARCHIVE_MEDIA_ORIGIN` | `https://` and Spexflix's `MEDIA_HOST`, Spexify's `API_HOST` and Spexarkivet's `API_HOST`: the Content Security Policy allows the videos, audio and previews that sections of spex pages show (spec 4.2.1). Spexflix's `spexflix-media` must also allow this web's origin (its `SPEXIPEDIA_WEB_URL`) |
 | `API_IMPORT_SAMPLE_DATA` | `true` replaces everything with sample data at every start (refused in `production`) |
 | `UMAMI_WEBSITE_ID` | The website's id in Umami (see `fgv-infra-deploy`, *Umami*); empty sends nothing |
 
