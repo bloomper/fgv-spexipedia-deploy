@@ -64,9 +64,11 @@ docker compose logs -f spexipedia-api
 are `fgv-infra-deploy`'s (`bin/seed-users.sh`), so the sample data needs no Keycloak admin client.
 
 **Change recipients.** After a change to base data Spexipedia tells the applications that copy it, as
-`fgv-spexipedia-service`. The sample data adds them all; in production add them under *Administration → Mottagare av
-ändringar* with their service account and notify address, e.g. `fgv-spexregister-service` and
-`http://spexregister-api:8080/api/sync/notify`. Each also pulls the feed itself every five minutes.
+`fgv-spexipedia-service`. The sample data adds them all; otherwise, in staging and production, run
+`bin/seed-recipients.sh` once after the first start. It adds Spexregister, Spexify, Spexflix, Spexgram and Spexarkivet
+(service account `fgv-<application>-service`, notify address `http://<application>-api:8080/api/sync/notify`) and
+leaves those that exist as they are, so it can be run again. Change or add others under *Administration → Mottagare av
+ändringar*. Each also pulls the feed itself every five minutes.
 
 ## Staging
 
