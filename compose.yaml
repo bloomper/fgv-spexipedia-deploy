@@ -171,7 +171,9 @@ services:
     volumes:
       - ./media/default.conf.template:/etc/nginx/templates/default.conf.template:ro
       - ./data/media:/srv/media:ro
+    # default: the staging tunnel's cloudflared is on it; fgv: production's reverse proxy
     networks:
+      - default
       - fgv
 
 volumes:
