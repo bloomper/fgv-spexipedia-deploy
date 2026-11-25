@@ -14,7 +14,7 @@ spexregister-api, revival-api, spexify-api, spexflix-api, archive-api, spexgram-
 ```
 
 Spexipedia is public: visitors read published pages without logging in, so there is no Cloudflare Access in front of
-it. The web reaches the API over the shared network. The API is also exposed on its own hostname, `API_HOST`, in full:
+it in production. Staging may restrict `WEB_HOST` with Access (see *Staging*); `API_HOST` never has Access. The web reaches the API over the shared network. The API is also exposed on its own hostname, `API_HOST`, in full:
 GraphQL (`/api/graphql`, public queries answer without a token), the MCP endpoint for AI assistants (`/api/mcp`, which
 accepts only tokens of Keycloak's `fgv-spexipedia-mcp`), uploads and the other endpoints, so that other applications
 can use it. The API itself enforces authentication per endpoint.
@@ -73,6 +73,12 @@ are `fgv-infra-deploy`'s (`bin/seed-users.sh`), so the sample data needs no Keyc
 `compose.tunnel.yaml` adds `cloudflared`. In the tunnel's public hostnames, route `WEB_HOST` with path `/media/*` to
 `http://spexipedia-media:80` first, and `WEB_HOST` to `http://spexipedia-web:3000`. Cache `/media/*` at Cloudflare;
 the addresses never change for a file. Route `API_HOST` (no path) to `http://spexipedia-api:8080`, uncached.
+
+Restrict who can reach staging with Cloudflare Access, as `spexregister-deploy`'s README describes (*Cloudflare
+Access*): an application for `WEB_HOST`, with an *Allow* policy for the testers. Leave `API_HOST` unprotected, as the
+other applications do: other applications and MCP clients (`/api/mcp`, `/.well-known/oauth-protected-resource/*`)
+can't complete an Access login, and the API already requires a Keycloak token for everything but public queries.
+Production has no Access.
 
 ## Production
 
